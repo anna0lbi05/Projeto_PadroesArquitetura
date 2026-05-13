@@ -1,18 +1,18 @@
 from datetime import datetime
 
-from src.repositories.pedido_repository import PedidoRepository
+from src.factories.discount_factory import DiscountFactory
 from src.factories.payment_factory import PaymentFactory
-from src.observers.notification_manager import NotificationManager
-from src.observers.email_notifier import EmailNotifier
-from src.observers.sms_notifier import SMSNotifier
-from src.observers.corporate_notifier import CorporateNotifier
 
 class PedidoService:
 
-    def __init__(self):
-        self.repository = PedidoRepository()
+    def __init__(
+        self,
+        repository,
+        notification_manager
+    ):
 
-        self.notification_manager = NotificationManager()
+        self.repository = repository
+        self.notification_manager = notification_manager
 
     def criar_pedido(self, cliente, itens, tipo_cliente):
 
@@ -20,13 +20,14 @@ class PedidoService:
 
         for item in itens:
 
-            subtotal = item['p'] * item['q']
+            strategy = DiscountFactory.criar(
+                item['tipo']
+            )
 
-            if item['tipo'] == 'desc10':
-                subtotal *= 0.9
-
-            elif item['tipo'] == 'desc20':
-                subtotal *= 0.8
+            subtotal = strategy.aplicar(
+                item['p'],
+                item['q']
+            )
 
             total += subtotal
 
@@ -45,12 +46,10 @@ class PedidoService:
             tp=tipo_cliente
         )
 
-        self._configurar_notificacoes(tipo_cliente)
-
         self.notification_manager.notify(
             f"Pedido criado para {cliente}"
-)
-        
+        )
+
         return pedido_id
 
     def buscar_pedido(self, pedido_id):
@@ -71,6 +70,7 @@ class PedidoService:
         aprovado = strategy.processar(pedido, valor)
 
         if aprovado and metodo in ['cartao', 'pix']:
+
             self.repository.atualizar_status(
                 pedido_id,
                 'aprovado'
@@ -83,22 +83,3 @@ class PedidoService:
 
     def close(self):
         self.repository.close()
-
-
-    def _configurar_notificacoes(self, tipo_cliente):
-
-        self.notification_manager.observers = []
-
-        self.notification_manager.add_observer(
-            EmailNotifier()
-        )
-
-        if tipo_cliente == 'vip':
-            self.notification_manager.add_observer(
-                SMSNotifier()
-            )
-
-        elif tipo_cliente == 'corporativo':
-            self.notification_manager.add_observer(
-                CorporateNotifier()
-            )
