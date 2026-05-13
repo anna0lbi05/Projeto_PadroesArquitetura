@@ -2,19 +2,32 @@ from datetime import datetime
 
 from src.factories.discount_factory import DiscountFactory
 from src.factories.payment_factory import PaymentFactory
+from src.factories.customer_factory import CustomerFactory
+from src.interfaces.repository_interface import (
+    RepositoryInterface
+)
+
+from src.observers.notification_manager import (
+    NotificationManager
+)
 
 class PedidoService:
 
     def __init__(
         self,
-        repository,
-        notification_manager
+        repository: RepositoryInterface,
+        notification_manager: NotificationManager
     ):
 
         self.repository = repository
         self.notification_manager = notification_manager
 
-    def criar_pedido(self, cliente, itens, tipo_cliente):
+    def criar_pedido(
+        self,
+        cliente: str,
+        itens: list,
+        tipo_cliente: str
+    ) -> int:
 
         total = 0
 
@@ -31,11 +44,8 @@ class PedidoService:
 
             total += subtotal
 
-        if tipo_cliente == 'vip':
-            total *= 0.95
-
-        elif tipo_cliente == 'corporativo':
-            total *= 0.90
+        customer_strategy = CustomerFactory.criar(tipo_cliente)
+        total = customer_strategy.aplicar_desconto(total)
 
         pedido_id = self.repository.salvar(
             cli=cliente,
@@ -52,13 +62,22 @@ class PedidoService:
 
         return pedido_id
 
-    def buscar_pedido(self, pedido_id):
+    def buscar_pedido(self, pedido_id: int):
         return self.repository.buscar_por_id(pedido_id)
 
-    def atualizar_status(self, pedido_id, status):
+    def atualizar_status(
+        self,
+        pedido_id: int,
+        status: str
+    ):
         self.repository.atualizar_status(pedido_id, status)
 
-    def processar_pagamento(self, pedido_id, metodo, valor):
+    def processar_pagamento(
+        self,
+        pedido_id: int,
+        metodo: str,
+        valor: float
+    ):
 
         pedido = self.repository.buscar_por_id(pedido_id)
 
@@ -78,8 +97,8 @@ class PedidoService:
 
         return aprovado
 
-    def listar_pedidos(self):
+    def listar_pedidos(self) -> list:
         return self.repository.listar_todos()
 
-    def close(self):
+    def close(self) -> None:
         self.repository.close()
