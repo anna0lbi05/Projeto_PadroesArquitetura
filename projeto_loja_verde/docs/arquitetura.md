@@ -92,3 +92,75 @@ Exemplo:
 - Maior testabilidade
 - Refatoração segura através de testes automatizados
 - Preservação do comportamento legado
+
+---
+
+# Diagrama UML
+
+```mermaid
+classDiagram
+
+class Pedido {
+    +id
+    +cliente
+    +valor_total
+    +status
+}
+
+class PedidoService {
+    +criar_pedido()
+    +processar_pagamento()
+    +cancelar_pedido()
+}
+
+class PedidoRepository {
+    +salvar()
+    +buscar_por_id()
+    +listar()
+}
+
+class PaymentFactory {
+    +criar()
+}
+
+class CustomerFactory {
+    +criar()
+}
+
+class DiscountFactory {
+    +criar()
+}
+
+class PaymentStrategy {
+    <<interface>>
+    +pagar()
+}
+
+class PixPaymentStrategy
+class CartaoPaymentStrategy
+class BoletoPaymentStrategy
+
+class Observer {
+    <<interface>>
+    +update()
+}
+
+class EmailNotifier
+class SmsNotifier
+class CorporateNotifier
+
+PedidoService --> PedidoRepository
+PedidoService --> PaymentFactory
+PedidoService --> CustomerFactory
+PedidoService --> DiscountFactory
+
+PaymentFactory --> PaymentStrategy
+
+PaymentStrategy <|-- PixPaymentStrategy
+PaymentStrategy <|-- CartaoPaymentStrategy
+PaymentStrategy <|-- BoletoPaymentStrategy
+
+Observer <|-- EmailNotifier
+Observer <|-- SmsNotifier
+Observer <|-- CorporateNotifier
+```
