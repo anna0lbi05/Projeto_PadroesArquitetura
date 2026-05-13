@@ -4,7 +4,12 @@ import json
 from src.models.pedido import Pedido
 
 
-class PedidoRepository:
+from src.interfaces.repository_interface import (
+    RepositoryInterface
+)
+
+
+class PedidoRepository(RepositoryInterface):
     def __init__(self, db_path='loja.db'):
         self.db = sqlite3.connect(db_path)
         self.c = self.db.cursor()
